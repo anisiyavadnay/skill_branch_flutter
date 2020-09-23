@@ -1,48 +1,78 @@
-class User {
-  String email;
-  String phone;
+import '../string_util.dart';
 
-  String _lastName;
-  String _firstName;
+enum LoginType { email, phone }
 
-  User._({String firstName, String lastName, String phone, String email});
+class User with UserUtils {
 
   factory User({String name, String phone, String email}) {
-    if (name.isEmpty) throw Exception("User name is empty");
-    if (phone.isEmpty || email.isEmpty) throw Exception("Phone or email is empty");
-
+    if (name?.isEmpty == true) throw Exception('User name is empty');
+    if (phone?.isEmpty == true && email?.isEmpty == true) {
+      throw Exception('Phone or email is empty');
+    }
     return User._(
-      firstName: _getFirstName(name),
-      lastName: _getLastName(name),
-      phone: checkPhone(phone),
-      email: checkEmail(email)
-    );
+        firstName: name.split(' ').first,
+        lastName: name.split(' ').last,
+        phone: phone != null ? checkPhone(phone) : '',
+        email: email != null ? checkEmail(email) : '');
   }
 
-  static String _getLastName(String userName) => userName.split(" ")[1];
-  static String _getFirstName(String userName) => userNmae.split(" ")[0];
-  
+  User._({String firstName, String lastName, String phone, String email})
+      : _firstName = firstName,
+        _lastName = lastName,
+        this.email = email,
+        this.phone = phone,
+        _type = email != null ? LoginType.email : LoginType.phone {
+    print('User created');
+  }
 
   static String checkPhone(String phone) {
-    String pattern = r"^{?:0])?[0-9]{11}";
-
-    phone = phone.replaceAll(RegExp("[^+\\d]"), "");
-
-    if (phone == null || phone.isEmpty) {
-      throw Exception("Enter don't empty phone number");
-    } else if (!RedExp(pattern).hasMatch(phone)) {
-      throw Exception("Enter a valid phone number starting whit a + and containing 11 digits");
+    final plusAndDigits = phone.replaceAll(RegExp(r'[^+\d]'), '');
+    if (!RegExp(r'^(?:[+0])?\d{11}').hasMatch(plusAndDigits)) {
+      throw Exception('Invalid phone number');
     }
-    return phone;
+    return plusAndDigits;
   }
 
-   static String checkEmail(String email) {
-    String pattern = r"^{?:0])?[0-9]{11}";
+  static String checkEmail(String email) =>
+      RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$")
+              .hasMatch(email)
+          ? email
+          : throw Exception('Invalid email');
 
-    if (email == null || email.isEmpty) {
-      throw Exception("Enter don't empty email");
-    } 
+  final String email;
+  final String phone;
+  final friends = <User>[];
 
-    return email;
+  final String _lastName;
+  final String _firstName;
+  final LoginType _type;
+
+  String get login => _type == LoginType.phone ? phone : email;
+
+  String get name =>
+      [_firstName, _lastName].map((_) => _.capitalized).join(' ');
+
+  @override
+  bool operator ==(Object other) {
+    if (other is User) {
+      return _firstName == other._firstName &&
+          _lastName == other._lastName &&
+          (phone == other.phone || email == other.email);
+    }
+    return false;
   }
+
+  void addFriend(Iterable<User> people) => friends.addAll(people);
+
+  void removeFriend(Iterable<User> people) => friends.remove(people);
+
+  String toString() => '''
+  name: $name
+  email: $email
+  friends: ${friends.toList()}
+ ''';
+}
+
+mixin UserUtils {
+  String capitalize(String s) => s.capitalized;
 }
